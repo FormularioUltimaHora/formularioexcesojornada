@@ -1,0 +1,6 @@
+{
+  "name": "Formulario de Exceso de Jornada",
+  "description": "Una aplicación para registrar incidentes de exceso de jornada laboral, presentando dos versiones de formulario para evaluación del equipo.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}

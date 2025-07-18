@@ -1,0 +1,46 @@
+
+import { FormData } from './types';
+
+// This constant represents the state of a form *before* it's submitted,
+// so it doesn't have an 'id' or 'submissionTimestamp' yet.
+// The type Omit<...> correctly reflects this, fixing a TypeScript error.
+export const initialFormData: Omit<FormData, 'id' | 'submissionTimestamp'> = {
+  workerName: '',
+  employeeId: '',
+  incidentDate: '',
+  shiftStartTime: '',
+  shiftEndTime: '',
+  locationOnReceipt: '',
+  serviceType: {
+    hospitalDischarge: false,
+    nonUrgentTransfer: false,
+    other: false,
+    otherText: '',
+  },
+  assignmentTime: '',
+  remainingShiftTime: '',
+  pickupAddress: '',
+  destinationAddress: '',
+  travelTimeToOrigin: '',
+  travelTimeOriginToDestination: '',
+  estimatedWorkTimeOrigin: '',
+  estimatedWorkTimeDestination: '',
+  totalEstimatedServiceTime: '',
+  complications: '',
+  exceedsRemainingTime: null,
+  unforeseenComplications: null,
+  affectedPersonalLife: null,
+  exceededOverOneHour: null,
+  excessMinutes: '',
+  impactExplanation: '',
+  generatedRoadRisk: null,
+  additionalHoursWorked: '',
+  riskDetails: '',
+  coordinatorName: '',
+  timesLast30Days: '',
+  assignmentPattern: null,
+  personalIntent: null,
+  patternDescription: '',
+  registerForLegalAction: null,
+  notifyLaborInspectorate: null,
+};
