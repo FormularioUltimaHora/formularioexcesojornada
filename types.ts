@@ -29,6 +29,7 @@ export interface FormData {
   estimatedWorkTimeOrigin: string;
   estimatedWorkTimeDestination: string;
   totalEstimatedServiceTime: string;
+  travelTimeDestinationToBase: string; // Nuevo campo para tiempo destino a base
   complications: string;
 
   // Workday Impact
@@ -54,4 +55,9 @@ export interface FormData {
   // Legal Action
   registerForLegalAction: YesNoNull;
   notifyLaborInspectorate: YesNoNull;
+
+  // Capturas obligatorias
+  screenshot1_url: string; // Tiempo desplazamiento a origen
+  screenshot2_url: string; // Tiempo origen-destino
+  screenshot3_url: string; // Tiempo destino a base
 }

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { initialFormData } from '../constants';
+import { initialFormData, supabase } from '../constants';
 import { FormData, YesNoNull } from '../types';
 import { Input } from './common/Input';
 import { Textarea } from './common/Textarea';
@@ -64,30 +64,12 @@ export const FormB: React.FC = () => {
     };
 
     try {
-        const response = await fetch('/api/submissions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newSubmission),
-        });
-
-        if (!response.ok) {
-            throw new Error('No se pudo guardar el registro. Por favor, inténtelo de nuevo.');
-        }
-
-        console.log('Formulario B enviado a la API:', newSubmission);
+        const { error: supabaseError } = await supabase.from('submissions').insert([newSubmission]);
+        if (supabaseError) throw supabaseError;
         setSubmitted(true);
-        
-    } catch (err) {
-        console.warn("La llamada a la API falló. Usando localStorage como respaldo para la demostración.");
-        setError('No se pudo conectar al servidor. El registro se guardó localmente como respaldo.');
-        
-        // --- Fallback a localStorage para demostración ---
-        const existingSubmissions = JSON.parse(localStorage.getItem('formSubmissions') || '[]') as FormData[];
-        const updatedSubmissions = [...existingSubmissions, newSubmission];
-        localStorage.setItem('formSubmissions', JSON.stringify(updatedSubmissions));
-        // --- Fin del Fallback ---
-        
-        setSubmitted(true); // Permitir al usuario continuar
+        setError(null);
+    } catch (err: any) {
+        setError('No se pudo conectar a la base de datos. Inténtelo de nuevo.');
     } finally {
         setIsLoading(false);
     }

@@ -5,6 +5,7 @@ import { TrashIcon } from './icons/TrashIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import { ArrowRightOnRectangleIcon } from './icons/ArrowRightOnRectangleIcon';
 import { Spinner } from './common/Spinner';
+import { supabase } from '../constants';
 
 interface AdminPageProps {
   onBack: () => void;
@@ -33,23 +34,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
         setIsLoading(true);
         setError(null);
         try {
-            // Se intenta obtener los datos desde la API.
-            const response = await fetch('/api/submissions');
-            if (!response.ok) {
-                throw new Error('Error al conectar con el servidor.');
-            }
-            const data = await response.json() as FormData[];
-            data.sort((a, b) => new Date(b.submissionTimestamp).getTime() - new Date(a.submissionTimestamp).getTime());
-            setSubmissions(data);
-
+            const { data, error: supabaseError } = await supabase.from('submissions').select('*');
+            if (supabaseError) throw supabaseError;
+            (data || []).sort((a, b) => new Date(b.submissionTimestamp).getTime() - new Date(a.submissionTimestamp).getTime());
+            setSubmissions(data || []);
         } catch (err) {
-            console.warn("La llamada a la API falló. Usando localStorage como respaldo para la demostración.");
-            setError('No se pudo conectar al servidor. Mostrando datos locales de respaldo.');
-            // --- Fallback a localStorage para demostración ---
-            const storedSubmissions = JSON.parse(localStorage.getItem('formSubmissions') || '[]') as FormData[];
-            storedSubmissions.sort((a, b) => new Date(b.submissionTimestamp).getTime() - new Date(a.submissionTimestamp).getTime());
-            setSubmissions(storedSubmissions);
-            // --- Fin del Fallback ---
+            setError('No se pudo conectar a la base de datos.');
+            setSubmissions([]);
         } finally {
             setIsLoading(false);
         }
@@ -60,15 +51,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
   const handleClearAll = async () => {
     if (window.confirm('¿Está seguro de que desea eliminar TODOS los registros? Esta acción no se puede deshacer.')) {
         try {
-            const response = await fetch('/api/submissions', { method: 'DELETE' });
-            if (!response.ok) throw new Error('Error del servidor');
+            const { error: supabaseError } = await supabase.from('submissions').delete().neq('id', '');
+            if (supabaseError) throw supabaseError;
             setSubmissions([]);
         } catch (err) {
-            console.warn("La llamada a la API de borrado total falló. Usando localStorage como respaldo.");
-            alert('No se pudo conectar al servidor. Se limpiarán los datos locales.');
-            // Fallback
-            localStorage.removeItem('formSubmissions');
-            setSubmissions([]);
+            alert('No se pudo conectar a la base de datos.');
         }
     }
   };
@@ -76,16 +63,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
   const handleDeleteOne = async (id: string) => {
     if (window.confirm('¿Está seguro de que desea eliminar este registro?')) {
         try {
-            const response = await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error('Error del servidor');
+            const { error: supabaseError } = await supabase.from('submissions').delete().eq('id', id);
+            if (supabaseError) throw supabaseError;
             setSubmissions(prev => prev.filter(s => s.id !== id));
         } catch(err) {
-            console.warn(`La llamada a la API de borrado para ${id} falló. Usando localStorage como respaldo.`);
-            alert('No se pudo conectar al servidor. Se eliminará el registro localmente.');
-            // Fallback
-            const updatedSubmissions = submissions.filter(s => s.id !== id);
-            localStorage.setItem('formSubmissions', JSON.stringify(updatedSubmissions));
-            setSubmissions(updatedSubmissions);
+            alert('No se pudo conectar a la base de datos.');
         }
     }
   };

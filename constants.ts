@@ -1,5 +1,6 @@
 
 import { FormData } from './types';
+import { createClient } from '@supabase/supabase-js';
 
 // This constant represents the state of a form *before* it's submitted,
 // so it doesn't have an 'id' or 'submissionTimestamp' yet.
@@ -44,3 +45,8 @@ export const initialFormData: Omit<FormData, 'id' | 'submissionTimestamp'> = {
   registerForLegalAction: null,
   notifyLaborInspectorate: null,
 };
+
+export const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);

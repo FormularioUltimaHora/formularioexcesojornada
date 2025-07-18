@@ -6,12 +6,15 @@ import { Input } from './common/Input';
 import { Textarea } from './common/Textarea';
 import { RadioGroup } from './common/RadioGroup';
 import { SectionCard } from './common/SectionCard';
+import { supabase } from '../constants';
+import { useRef } from 'react';
 
 export const FormA: React.FC = () => {
   const [formData, setFormData] = useState<Omit<FormData, 'id' | 'submissionTimestamp'>>(initialFormData);
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [screenshots, setScreenshots] = useState<(File | null)[]>([null, null, null]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -40,50 +43,58 @@ export const FormA: React.FC = () => {
     setFormData(prev => ({ ...prev, serviceType: {...prev.serviceType, otherText: value}}))
   }
 
+  const handleScreenshotChange = (index: number, file: File | null) => {
+    setScreenshots(prev => {
+      const updated = [...prev];
+      updated[index] = file;
+      return updated;
+    });
+  };
+
+  const uploadScreenshot = async (file: File, submissionId: string, index: number) => {
+    const { data, error } = await supabase.storage.from('screenshots').upload(`${submissionId}/screenshot${index + 1}_${Date.now()}`, file, { upsert: true });
+    if (error) throw error;
+    const { data: publicUrlData } = supabase.storage.from('screenshots').getPublicUrl(data.path);
+    return publicUrlData.publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    
+
+    // Validar que las 3 capturas están presentes
+    if (!screenshots[0] || !screenshots[1] || !screenshots[2]) {
+      setError('Debes adjuntar las 3 capturas de pantalla obligatorias.');
+      setIsLoading(false);
+      return;
+    }
     const safeWorkerName = formData.workerName.replace(/\s/g, '_') || 'sin_nombre';
     const safeEmployeeId = formData.employeeId || 'sin_id';
+    const submissionId = `${safeEmployeeId}-${safeWorkerName}-${Date.now()}`;
 
-    const newSubmission: FormData = {
-        ...formData,
-        id: `${safeEmployeeId}-${safeWorkerName}-${Date.now()}`,
-        submissionTimestamp: new Date().toISOString(),
-    };
-
+    let screenshotUrls: (string | undefined)[] = [undefined, undefined, undefined];
     try {
-        // En una aplicación real, esta llamada enviaría los datos a un servidor.
-        // Esta llamada fallará en este entorno, pero demuestra el patrón correcto.
-        const response = await fetch('/api/submissions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newSubmission),
-        });
-
-        if (!response.ok) {
-            throw new Error('No se pudo guardar el registro. Por favor, inténtelo de nuevo.');
-        }
-
-        console.log('Formulario A enviado a la API:', newSubmission);
-        setSubmitted(true);
-        
-    } catch (err) {
-        console.warn("La llamada a la API falló. Usando localStorage como respaldo para la demostración.");
-        setError('No se pudo conectar al servidor. El registro se guardó localmente como respaldo.');
-
-        // --- Fallback a localStorage para demostración ---
-        const existingSubmissions = JSON.parse(localStorage.getItem('formSubmissions') || '[]') as FormData[];
-        const updatedSubmissions = [...existingSubmissions, newSubmission];
-        localStorage.setItem('formSubmissions', JSON.stringify(updatedSubmissions));
-        // --- Fin del Fallback ---
-        
-        setSubmitted(true); // Permitir al usuario continuar
+      for (let i = 0; i < screenshots.length; i++) {
+        screenshotUrls[i] = await uploadScreenshot(screenshots[i] as File, submissionId, i);
+      }
+      const newSubmission: any = {
+        ...formData,
+        id: submissionId,
+        submissionTimestamp: new Date().toISOString(),
+        screenshot1_url: screenshotUrls[0],
+        screenshot2_url: screenshotUrls[1],
+        screenshot3_url: screenshotUrls[2],
+      };
+      const { error: supabaseError } = await supabase.from('submissions').insert([newSubmission]);
+      if (supabaseError) throw supabaseError;
+      setSubmitted(true);
+      setError(null);
+    } catch (err: any) {
+      setError('No se pudo conectar a la base de datos o subir las imágenes. Inténtelo de nuevo.');
     } finally {
-        setIsLoading(false);
-        window.scrollTo(0, 0);
+      setIsLoading(false);
+      window.scrollTo(0, 0);
     }
   };
 
@@ -142,7 +153,23 @@ export const FormA: React.FC = () => {
         <Input label="Dirección recogida" name="pickupAddress" value={formData.pickupAddress} onChange={handleChange} containerClassName="sm:col-span-3" />
         <Input label="Dirección destino" name="destinationAddress" value={formData.destinationAddress} onChange={handleChange} containerClassName="sm:col-span-3" />
         <Input label="Tiempo desplazamiento a origen (min)" name="travelTimeToOrigin" type="number" value={formData.travelTimeToOrigin} onChange={handleChange} containerClassName="sm:col-span-3" />
+        {/* Captura 1 obligatoria */}
+        <div className="sm:col-span-3">
+          <label className="block text-sm font-medium text-slate-700 mb-1">Captura de pantalla: Tiempo desplazamiento a origen <span className="text-red-600">*</span></label>
+          <input type="file" accept="image/*" required onChange={e => handleScreenshotChange(0, e.target.files?.[0] || null)} />
+        </div>
         <Input label="Tiempo origen-destino (min)" name="travelTimeOriginToDestination" type="number" value={formData.travelTimeOriginToDestination} onChange={handleChange} containerClassName="sm:col-span-3" />
+        {/* Captura 2 obligatoria */}
+        <div className="sm:col-span-3">
+          <label className="block text-sm font-medium text-slate-700 mb-1">Captura de pantalla: Tiempo origen-destino <span className="text-red-600">*</span></label>
+          <input type="file" accept="image/*" required onChange={e => handleScreenshotChange(1, e.target.files?.[0] || null)} />
+        </div>
+        <Input label="Tiempo destino a base (min)" name="travelTimeDestinationToBase" type="number" value={formData.travelTimeDestinationToBase} onChange={handleChange} containerClassName="sm:col-span-3" />
+        {/* Captura 3 obligatoria */}
+        <div className="sm:col-span-3">
+          <label className="block text-sm font-medium text-slate-700 mb-1">Captura de pantalla: Tiempo destino a base <span className="text-red-600">*</span></label>
+          <input type="file" accept="image/*" required onChange={e => handleScreenshotChange(2, e.target.files?.[0] || null)} />
+        </div>
         <Input label="Tiempo trabajo en origen (min)" name="estimatedWorkTimeOrigin" type="number" value={formData.estimatedWorkTimeOrigin} onChange={handleChange} containerClassName="sm:col-span-3" />
         <Input label="Tiempo trabajo en destino (min)" name="estimatedWorkTimeDestination" type="number" value={formData.estimatedWorkTimeDestination} onChange={handleChange} containerClassName="sm:col-span-3" />
         <Input label="Tiempo completo estimado del servicio (min)" name="totalEstimatedServiceTime" type="number" value={formData.totalEstimatedServiceTime} onChange={handleChange} containerClassName="sm:col-span-6" />
