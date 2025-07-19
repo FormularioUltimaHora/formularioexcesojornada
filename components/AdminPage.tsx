@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { FormData } from '../types';
-import { TrashIcon } from './icons/TrashIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import { ArrowRightOnRectangleIcon } from './icons/ArrowRightOnRectangleIcon';
 import { Spinner } from './common/Spinner';
@@ -34,7 +33,6 @@ function exportToCSV(data: any[], filename: string) {
     return;
   }
 
-  // Definir las columnas que queremos exportar
   const columns = [
     { key: 'workerName', label: 'Nombre Trabajador' },
     { key: 'employeeId', label: 'Nº Empleado' },
@@ -60,10 +58,7 @@ function exportToCSV(data: any[], filename: string) {
     { key: 'patternDescription', label: 'Descripción Patrón' }
   ];
 
-  // Crear headers
   const headers = columns.map(col => col.label).join(',');
-  
-  // Crear filas de datos
   const rows = data.map(item => {
     return columns.map(col => {
       let value = item[col.key];
@@ -71,7 +66,6 @@ function exportToCSV(data: any[], filename: string) {
       if (typeof value === 'boolean') return value ? 'Sí' : 'No';
       if (value === 'yes') return 'Sí';
       if (value === 'no') return 'No';
-      // Escapar comillas en CSV
       if (typeof value === 'string' && value.includes(',')) {
         value = `"${value.replace(/"/g, '""')}"`;
       }
@@ -91,6 +85,87 @@ function exportToCSV(data: any[], filename: string) {
   document.body.removeChild(link);
 }
 
+// Componente para gráfico de barras simple
+const BarChart: React.FC<{ data: { label: string; value: number }[]; title: string }> = ({ data, title }) => {
+  const maxValue = Math.max(...data.map(d => d.value));
+  
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+      <h3 className="text-lg font-semibold text-slate-900 mb-4">{title}</h3>
+      <div className="space-y-3">
+        {data.map((item, index) => (
+          <div key={index} className="flex items-center gap-3">
+            <div className="w-24 text-sm text-slate-600 truncate">{item.label}</div>
+            <div className="flex-1 bg-slate-200 rounded-full h-6 relative">
+              <div 
+                className="bg-indigo-600 h-6 rounded-full transition-all duration-300"
+                style={{ width: `${(item.value / maxValue) * 100}%` }}
+              />
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                {item.value}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Componente para gráfico de dona
+const DonutChart: React.FC<{ data: { label: string; value: number; color: string }[]; title: string }> = ({ data, title }) => {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+      <h3 className="text-lg font-semibold text-slate-900 mb-4">{title}</h3>
+      <div className="flex items-center justify-center mb-4">
+        <div className="relative w-32 h-32">
+          <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 32 32">
+            {data.map((item, index) => {
+              const percentage = (item.value / total) * 100;
+              const circumference = 2 * Math.PI * 14;
+              const strokeDasharray = (percentage / 100) * circumference;
+              const strokeDashoffset = circumference - strokeDasharray;
+              const previousPercentages = data.slice(0, index).reduce((sum, d) => sum + (d.value / total) * 100, 0);
+              const rotation = (previousPercentages / 100) * 360;
+              
+              return (
+                <circle
+                  key={index}
+                  cx="16"
+                  cy="16"
+                  r="14"
+                  fill="none"
+                  stroke={item.color}
+                  strokeWidth="4"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  transform={`rotate(${rotation} 16 16)`}
+                />
+              );
+            })}
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-lg font-bold text-slate-900">{total}</span>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {data.map((item, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: item.color }}></div>
+            <span className="text-sm text-slate-600">{item.label}</span>
+            <span className="text-sm font-medium text-slate-900 ml-auto">
+              {((item.value / total) * 100).toFixed(1)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
   const [submissions, setSubmissions] = useState<FormData[]>([]);
   const [filteredSubmissions, setFilteredSubmissions] = useState<FormData[]>([]);
@@ -99,6 +174,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<string>('submissionTimestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [activeTab, setActiveTab] = useState<'overview' | 'details' | 'analytics'>('overview');
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -137,7 +213,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
       );
     });
 
-    // Ordenar
     filtered.sort((a: any, b: any) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
@@ -169,31 +244,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
     exportToCSV(filteredSubmissions, `registros_incidencias_${timestamp}`);
   };
 
-  const handleClearAll = async () => {
-    if (window.confirm('¿Está seguro de que desea eliminar TODOS los registros? Esta acción no se puede deshacer.')) {
-      try {
-        const { error: supabaseError } = await supabase.from('submissions').delete().neq('id', '');
-        if (supabaseError) throw supabaseError;
-        setSubmissions([]);
-        setFilteredSubmissions([]);
-      } catch (err) {
-        alert('No se pudo conectar a la base de datos.');
-      }
-    }
-  };
-
-  const handleDeleteOne = async (id: string) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este registro?')) {
-      try {
-        const { error: supabaseError } = await supabase.from('submissions').delete().eq('id', id);
-        if (supabaseError) throw supabaseError;
-        setSubmissions(prev => prev.filter(s => s.id !== id));
-      } catch(err) {
-        alert('No se pudo conectar a la base de datos.');
-      }
-    }
-  };
-
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     try {
@@ -219,6 +269,52 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
     return String(value);
   };
 
+  // Calcular estadísticas
+  const stats = {
+    total: submissions.length,
+    thisMonth: submissions.filter(s => {
+      const date = new Date(s.submissionTimestamp);
+      const now = new Date();
+      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    }).length,
+    thisWeek: submissions.filter(s => {
+      const date = new Date(s.submissionTimestamp);
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return date >= weekAgo;
+    }).length,
+    averageExcess: submissions.length > 0 
+      ? Math.round(submissions.reduce((sum, s) => sum + (parseInt(s.excessMinutes) || 0), 0) / submissions.length)
+      : 0
+  };
+
+  // Datos para gráficos
+  const coordinatorData = Object.entries(
+    submissions.reduce((acc, s) => {
+      const coord = s.coordinatorName || 'Sin Coordinador';
+      acc[coord] = (acc[coord] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  ).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, 5);
+
+  const riskData = [
+    { label: 'Riesgo Vial', value: submissions.filter(s => s.generatedRoadRisk === 'yes').length, color: '#ef4444' },
+    { label: 'Sin Riesgo', value: submissions.filter(s => s.generatedRoadRisk === 'no').length, color: '#10b981' },
+    { label: 'No Especificado', value: submissions.filter(s => !s.generatedRoadRisk || s.generatedRoadRisk === null).length, color: '#6b7280' }
+  ];
+
+  const legalActionData = [
+    { label: 'Acciones Legales', value: submissions.filter(s => s.registerForLegalAction === 'yes').length, color: '#dc2626' },
+    { label: 'Sin Acciones', value: submissions.filter(s => s.registerForLegalAction === 'no').length, color: '#059669' },
+    { label: 'No Especificado', value: submissions.filter(s => !s.registerForLegalAction || s.registerForLegalAction === null).length, color: '#6b7280' }
+  ];
+
+  const personalLifeData = [
+    { label: 'Afectó Vida Personal', value: submissions.filter(s => s.affectedPersonalLife === 'yes').length, color: '#f59e0b' },
+    { label: 'No Afectó', value: submissions.filter(s => s.affectedPersonalLife === 'no').length, color: '#10b981' },
+    { label: 'No Especificado', value: submissions.filter(s => !s.affectedPersonalLife || s.affectedPersonalLife === null).length, color: '#6b7280' }
+  ];
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 py-8">
@@ -238,9 +334,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Panel de Administración</h1>
+              <h1 className="text-3xl font-bold text-slate-900">Centro de Análisis de Incidencias</h1>
               <p className="mt-2 text-slate-600">
-                Gestión de registros de incidencias de exceso de jornada
+                Estadísticas y visualización de registros de exceso de jornada
               </p>
             </div>
             <div className="flex gap-3">
@@ -261,170 +357,358 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
           </div>
         </div>
 
-        {/* Controles */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-            <div className="flex-1">
-              <label htmlFor="search" className="block text-sm font-medium text-slate-700 mb-2">
-                Buscar registros
-              </label>
-              <input
-                type="text"
-                id="search"
-                placeholder="Buscar por nombre, empleado, fecha..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleExport}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Exportar CSV
-              </button>
-              <button
-                onClick={handleClearAll}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Eliminar Todos
-              </button>
-            </div>
-          </div>
-          
-          <div className="mt-4 text-sm text-slate-600">
-            Mostrando {filteredSubmissions.length} de {submissions.length} registros
+        {/* Tabs */}
+        <div className="mb-6">
+          <div className="border-b border-slate-200">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', name: 'Resumen General' },
+                { id: 'analytics', name: 'Análisis Detallado' },
+                { id: 'details', name: 'Registros Completos' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.id
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                  }`}
+                >
+                  {tab.name}
+                </button>
+              ))}
+            </nav>
           </div>
         </div>
 
-        {/* Tabla */}
-        {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">{error}</p>
-          </div>
-        ) : filteredSubmissions.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center">
-            <p className="text-slate-500 text-lg">
-              {searchTerm ? 'No se encontraron registros que coincidan con la búsqueda.' : 'No hay registros guardados todavía.'}
-            </p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                      onClick={() => handleSort('workerName')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Trabajador
-                        {sortField === 'workerName' && (
-                          <ChevronDownIcon className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                      onClick={() => handleSort('employeeId')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Nº Empleado
-                        {sortField === 'employeeId' && (
-                          <ChevronDownIcon className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                      onClick={() => handleSort('incidentDate')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Fecha Incidente
-                        {sortField === 'incidentDate' && (
-                          <ChevronDownIcon className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                      onClick={() => handleSort('submissionTimestamp')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Fecha Envío
-                        {sortField === 'submissionTimestamp' && (
-                          <ChevronDownIcon className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
-                        )}
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Exceso (min)
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Coordinador
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Acciones Legales
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {filteredSubmissions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-slate-900">
-                          {formatValue(sub.workerName)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {formatValue(sub.employeeId)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {formatValue(sub.incidentDate)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {formatDate(sub.submissionTimestamp)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {formatValue(sub.excessMinutes)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {formatValue(sub.coordinatorName)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {formatValue(sub.registerForLegalAction)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleDeleteOne(sub.id)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                          title="Eliminar registro"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Contenido según tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Estadísticas principales */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-600">Total Registros</p>
+                    <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <span className="text-indigo-600 text-xl font-bold">📊</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-600">Este Mes</p>
+                    <p className="text-3xl font-bold text-slate-900">{stats.thisMonth}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <span className="text-green-600 text-xl font-bold">📅</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-600">Esta Semana</p>
+                    <p className="text-3xl font-bold text-slate-900">{stats.thisWeek}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <span className="text-yellow-600 text-xl font-bold">📈</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-600">Promedio Exceso</p>
+                    <p className="text-3xl font-bold text-slate-900">{stats.averageExcess} min</p>
+                  </div>
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <span className="text-red-600 text-xl font-bold">⏰</span>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <DonutChart data={riskData} title="Distribución de Riesgo Vial" />
+              <DonutChart data={legalActionData} title="Acciones Legales Registradas" />
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <DonutChart data={personalLifeData} title="Impacto en Vida Personal" />
+              <BarChart data={coordinatorData} title="Top 5 Coordinadores" />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Análisis de Tendencias</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <h4 className="font-medium text-slate-700 mb-2">Patrones de Asignación</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-slate-600">Patrón detectado:</span>
+                      <span className="text-sm font-medium">
+                        {submissions.filter(s => s.assignmentPattern === 'yes').length} de {submissions.length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-slate-600">Porcentaje:</span>
+                      <span className="text-sm font-medium">
+                        {submissions.length > 0 ? ((submissions.filter(s => s.assignmentPattern === 'yes').length / submissions.length) * 100).toFixed(1) : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-slate-700 mb-2">Intencionalidad</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-slate-600">Intencional:</span>
+                      <span className="text-sm font-medium">
+                        {submissions.filter(s => s.personalIntent === 'yes').length} de {submissions.length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-slate-600">Porcentaje:</span>
+                      <span className="text-sm font-medium">
+                        {submissions.length > 0 ? ((submissions.filter(s => s.personalIntent === 'yes').length / submissions.length) * 100).toFixed(1) : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-slate-700 mb-2">Notificación Inspección</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-slate-600">Notificados:</span>
+                      <span className="text-sm font-medium">
+                        {submissions.filter(s => s.notifyLaborInspectorate === 'yes').length} de {submissions.length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-slate-600">Porcentaje:</span>
+                      <span className="text-sm font-medium">
+                        {submissions.length > 0 ? ((submissions.filter(s => s.notifyLaborInspectorate === 'yes').length / submissions.length) * 100).toFixed(1) : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Análisis Temporal</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-slate-700 mb-2">Distribución por Mes</h4>
+                  <div className="space-y-2">
+                    {Object.entries(
+                      submissions.reduce((acc, s) => {
+                        const date = new Date(s.submissionTimestamp);
+                        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        acc[monthKey] = (acc[monthKey] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>)
+                    ).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6).map(([month, count]) => (
+                      <div key={month} className="flex justify-between">
+                        <span className="text-sm text-slate-600">{month}</span>
+                        <span className="text-sm font-medium">{count} registros</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-slate-700 mb-2">Exceso Promedio por Mes</h4>
+                  <div className="space-y-2">
+                    {Object.entries(
+                      submissions.reduce((acc, s) => {
+                        const date = new Date(s.submissionTimestamp);
+                        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        if (!acc[monthKey]) acc[monthKey] = { total: 0, count: 0 };
+                        acc[monthKey].total += parseInt(s.excessMinutes) || 0;
+                        acc[monthKey].count += 1;
+                        return acc;
+                      }, {} as Record<string, { total: number; count: number }>)
+                    ).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6).map(([month, data]) => (
+                      <div key={month} className="flex justify-between">
+                        <span className="text-sm text-slate-600">{month}</span>
+                        <span className="text-sm font-medium">{Math.round(data.total / data.count)} min</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'details' && (
+          <div className="space-y-6">
+            {/* Controles */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                <div className="flex-1">
+                  <label htmlFor="search" className="block text-sm font-medium text-slate-700 mb-2">
+                    Buscar registros
+                  </label>
+                  <input
+                    type="text"
+                    id="search"
+                    placeholder="Buscar por nombre, empleado, fecha..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleExport}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Exportar CSV
+                  </button>
+                </div>
+              </div>
+              
+              <div className="mt-4 text-sm text-slate-600">
+                Mostrando {filteredSubmissions.length} de {submissions.length} registros
+              </div>
+            </div>
+
+            {/* Tabla */}
+            {error ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-800">{error}</p>
+              </div>
+            ) : filteredSubmissions.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center">
+                <p className="text-slate-500 text-lg">
+                  {searchTerm ? 'No se encontraron registros que coincidan con la búsqueda.' : 'No hay registros guardados todavía.'}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                          onClick={() => handleSort('workerName')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Trabajador
+                            {sortField === 'workerName' && (
+                              <ChevronDownIcon className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                          onClick={() => handleSort('employeeId')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Nº Empleado
+                            {sortField === 'employeeId' && (
+                              <ChevronDownIcon className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                          onClick={() => handleSort('incidentDate')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Fecha Incidente
+                            {sortField === 'incidentDate' && (
+                              <ChevronDownIcon className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                          onClick={() => handleSort('submissionTimestamp')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Fecha Envío
+                            {sortField === 'submissionTimestamp' && (
+                              <ChevronDownIcon className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                            )}
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Exceso (min)
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Coordinador
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Acciones Legales
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {filteredSubmissions.map((sub) => (
+                        <tr key={sub.id} className="hover:bg-slate-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-slate-900">
+                              {formatValue(sub.workerName)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-slate-900">
+                              {formatValue(sub.employeeId)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-slate-900">
+                              {formatValue(sub.incidentDate)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-slate-900">
+                              {formatDate(sub.submissionTimestamp)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-slate-900">
+                              {formatValue(sub.excessMinutes)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-slate-900">
+                              {formatValue(sub.coordinatorName)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-slate-900">
+                              {formatValue(sub.registerForLegalAction)}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
