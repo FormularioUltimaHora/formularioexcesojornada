@@ -57,9 +57,8 @@ const App: React.FC = () => {
   }
   
   const getHeaderSubtext = () => {
-      if (view === 'admin') return 'Centro de análisis y gestión de registros de exceso de jornada desde Supabase.';
       if (view === 'login') return 'Esta sección es solo para personal autorizado.';
-      // Subtitle for forms view removed as per request.
+      // Subtitle for forms view and admin view removed as per request.
       return '';
   }
 
