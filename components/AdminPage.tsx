@@ -18,7 +18,50 @@ function toCamelCase(obj: any): any {
     const newObj: any = {};
     for (const key in obj) {
       if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
-      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      
+      // Mapeo específico para los nombres de columnas de Supabase
+      let camelKey = key;
+      if (key === 'submissiontimestamp') camelKey = 'submissionTimestamp';
+      else if (key === 'workername') camelKey = 'workerName';
+      else if (key === 'employeeid') camelKey = 'employeeId';
+      else if (key === 'incidentdate') camelKey = 'incidentDate';
+      else if (key === 'shiftstarttime') camelKey = 'shiftStartTime';
+      else if (key === 'shiftendtime') camelKey = 'shiftEndTime';
+      else if (key === 'locationonreceipt') camelKey = 'locationOnReceipt';
+      else if (key === 'servicetype_hospitaldischarge') camelKey = 'serviceType_hospitalDischarge';
+      else if (key === 'servicetype_nonurgenttransfer') camelKey = 'serviceType_nonUrgentTransfer';
+      else if (key === 'servicetype_other') camelKey = 'serviceType_other';
+      else if (key === 'servicetype_othertext') camelKey = 'serviceType_otherText';
+      else if (key === 'assignmenttime') camelKey = 'assignmentTime';
+      else if (key === 'remainingshifttime') camelKey = 'remainingShiftTime';
+      else if (key === 'pickupaddress') camelKey = 'pickupAddress';
+      else if (key === 'destinationaddress') camelKey = 'destinationAddress';
+      else if (key === 'traveltimetoorigin') camelKey = 'travelTimeToOrigin';
+      else if (key === 'traveltimeorigintodestination') camelKey = 'travelTimeOriginToDestination';
+      else if (key === 'traveltimedestinationtobase') camelKey = 'travelTimeDestinationToBase';
+      else if (key === 'estimatedworktimeorigin') camelKey = 'estimatedWorkTimeOrigin';
+      else if (key === 'estimatedworktimedestination') camelKey = 'estimatedWorkTimeDestination';
+      else if (key === 'totalestimatedservicetime') camelKey = 'totalEstimatedServiceTime';
+      else if (key === 'exceedsremainingtime') camelKey = 'exceedsRemainingTime';
+      else if (key === 'unforeseencomplications') camelKey = 'unforeseenComplications';
+      else if (key === 'affectedpersonallife') camelKey = 'affectedPersonalLife';
+      else if (key === 'exceededoveronehour') camelKey = 'exceededOverOneHour';
+      else if (key === 'excessminutes') camelKey = 'excessMinutes';
+      else if (key === 'impactexplanation') camelKey = 'impactExplanation';
+      else if (key === 'generatedroadrisk') camelKey = 'generatedRoadRisk';
+      else if (key === 'additionalhoursworked') camelKey = 'additionalHoursWorked';
+      else if (key === 'riskdetails') camelKey = 'riskDetails';
+      else if (key === 'coordinatorname') camelKey = 'coordinatorName';
+      else if (key === 'timeslast30days') camelKey = 'timesLast30Days';
+      else if (key === 'assignmentpattern') camelKey = 'assignmentPattern';
+      else if (key === 'personalintent') camelKey = 'personalIntent';
+      else if (key === 'patterndescription') camelKey = 'patternDescription';
+      else if (key === 'registerforlegalaction') camelKey = 'registerForLegalAction';
+      else if (key === 'notifylaborinspectorate') camelKey = 'notifyLaborInspectorate';
+      else if (key === 'screenshot1_url') camelKey = 'screenshot1_url';
+      else if (key === 'screenshot2_url') camelKey = 'screenshot2_url';
+      else if (key === 'screenshot3_url') camelKey = 'screenshot3_url';
+      
       newObj[camelKey] = toCamelCase(obj[key]);
     }
     return newObj;
