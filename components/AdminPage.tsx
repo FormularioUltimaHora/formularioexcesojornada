@@ -181,16 +181,36 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
       setIsLoading(true);
       setError(null);
       try {
+        console.log('🔄 Iniciando conexión con Supabase...');
+        
         const { data, error: supabaseError } = await supabase.from('submissions').select('*');
-        if (supabaseError) throw supabaseError;
+        
+        console.log('📊 Respuesta de Supabase:', { data, error: supabaseError });
+        
+        if (supabaseError) {
+          console.error('❌ Error de Supabase:', supabaseError);
+          throw supabaseError;
+        }
+        
+        console.log('✅ Datos obtenidos de Supabase:', data);
+        console.log('📈 Número de registros:', data?.length || 0);
         
         const mapped = toCamelCase(data || []);
+        console.log('🔄 Datos mapeados a camelCase:', mapped);
+        
         const sorted = mapped.sort((a: any, b: any) => 
           new Date(b.submissionTimestamp).getTime() - new Date(a.submissionTimestamp).getTime()
         );
+        
+        console.log('📊 Datos ordenados:', sorted);
+        console.log('📋 Primer registro:', sorted[0]);
+        
         setSubmissions(sorted);
         setFilteredSubmissions(sorted);
+        
+        console.log('✅ Estado actualizado con datos reales de Supabase');
       } catch (err) {
+        console.error('❌ Error completo:', err);
         setError('No se pudo conectar a la base de datos.');
         setSubmissions([]);
         setFilteredSubmissions([]);

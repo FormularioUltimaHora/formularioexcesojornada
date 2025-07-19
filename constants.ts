@@ -50,7 +50,14 @@ export const initialFormData: Omit<FormData, 'id' | 'submissionTimestamp'> = {
   screenshot3_url: '',
 };
 
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+// Configuración de Supabase con credenciales verificadas
+const supabaseUrl = 'https://eugowbqnmztgtacoxdcg.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1Z293YnFubXp0Z3RhY294ZGNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4NTQ2MDEsImV4cCI6MjA2ODQzMDYwMX0.UGu9Iz4_bp8xoahSkkRMCQprCW9T8CVAl8CueqvbS5A';
+
+console.log('🔧 Configurando cliente Supabase...');
+console.log('📡 URL:', supabaseUrl);
+console.log('🔑 Clave configurada:', !!supabaseAnonKey);
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+console.log('✅ Cliente Supabase configurado correctamente');
