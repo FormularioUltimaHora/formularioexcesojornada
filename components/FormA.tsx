@@ -81,6 +81,8 @@ function mapToDatabaseFormat(formData: any): any {
   
   // Mapeo directo de campos string con nombres exactos de BD
   const fieldMappings = {
+    'id': 'id', // Campo obligatorio que no puede ser null
+    'submissionTimestamp': 'submissiontimestamp',
     'workerName': 'workername',
     'employeeId': 'employeeid',
     'incidentDate': 'incidentdate',
