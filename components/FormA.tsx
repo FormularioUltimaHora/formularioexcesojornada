@@ -6,7 +6,7 @@ import { Input } from './common/Input';
 import { Textarea } from './common/Textarea';
 import { RadioGroup } from './common/RadioGroup';
 import { SectionCard } from './common/SectionCard';
-import { supabase } from '../constants';
+import { supabase, supabaseAnonKey } from '../constants';
 import { useRef } from 'react';
 
 // Función profesional para mapear datos del formulario a la base de datos
@@ -186,6 +186,22 @@ export const FormA: React.FC = () => {
         console.error('Error Supabase:', supabaseError);
         throw supabaseError;
       }
+      // Llamada a la función Edge de email
+      try {
+        await fetch('https://eugowbqnmztgtacoxdcg.functions.supabase.co/send-email-brevo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`
+          },
+          body: JSON.stringify({
+            formData: newSubmission,
+            userEmail: formData.email
+          })
+        });
+      } catch (e) {
+        console.error('Error enviando email:', e);
+      }
       setSubmitted(true);
       setError(null);
     } catch (err: any) {
@@ -226,6 +242,7 @@ export const FormA: React.FC = () => {
       <SectionCard title="Datos del Trabajador">
         <Input label="Nombre" name="workerName" value={formData.workerName} onChange={handleChange} containerClassName="sm:col-span-3" required />
         <Input label="Nº Empleado" name="employeeId" value={formData.employeeId} onChange={handleChange} containerClassName="sm:col-span-3" required />
+        <Input label="Correo electrónico" name="email" type="email" value={formData.email || ''} onChange={handleChange} containerClassName="sm:col-span-3" required placeholder="ejemplo@dominio.com" helperText="Introduce el email donde quieres recibir una copia del formulario." />
         <Input label="Fecha del incidente" name="incidentDate" type="date" value={formData.incidentDate} onChange={handleChange} containerClassName="sm:col-span-2" />
         <Input label="Hora inicio jornada" name="shiftStartTime" type="time" value={formData.shiftStartTime} onChange={handleChange} containerClassName="sm:col-span-2" />
         <Input label="Hora prevista finalización" name="shiftEndTime" type="time" value={formData.shiftEndTime} onChange={handleChange} containerClassName="sm:col-span-2" />

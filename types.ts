@@ -11,6 +11,7 @@ export interface FormData {
   incidentDate: string;
   shiftStartTime: string;
   shiftEndTime: string;
+  email: string;
 
   // Service Details
   locationOnReceipt: string;

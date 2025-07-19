@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 export const initialFormData: Omit<FormData, 'id' | 'submissionTimestamp'> = {
   workerName: '',
   employeeId: '',
+  email: '',
   incidentDate: '',
   shiftStartTime: '',
   shiftEndTime: '',
@@ -59,5 +60,6 @@ console.log('📡 URL:', supabaseUrl);
 console.log('🔑 Clave configurada:', !!supabaseAnonKey);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabaseAnonKey };
 
 console.log('✅ Cliente Supabase configurado correctamente');

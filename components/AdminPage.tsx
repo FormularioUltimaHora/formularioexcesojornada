@@ -132,7 +132,7 @@ function exportToCSV(data: any[], filename: string) {
 const BarChart: React.FC<{ data: { label: string; value: number }[]; title: string }> = ({ data, title }) => {
   const maxValue = Math.max(...data.map(d => d.value));
   
-  return (
+    return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
       <h3 className="text-lg font-semibold text-slate-900 mb-4">{title}</h3>
       <div className="space-y-3">
@@ -205,8 +205,8 @@ const DonutChart: React.FC<{ data: { label: string; value: number; color: string
           </div>
         ))}
       </div>
-    </div>
-  );
+        </div>
+    );
 };
 
 export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
@@ -223,9 +223,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
 
   useEffect(() => {
     const fetchSubmissions = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
+        setIsLoading(true);
+        setError(null);
+        try {
         console.log('🔄 Iniciando conexión con Supabase...');
         
         const { data, error: supabaseError } = await supabase.from('submissions').select('*');
@@ -254,18 +254,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
         setFilteredSubmissions(sorted);
         
         console.log('✅ Estado actualizado con datos reales de Supabase');
-      } catch (err) {
+        } catch (err) {
         console.error('❌ Error completo:', err);
         setError('No se pudo conectar a la base de datos.');
         setSubmissions([]);
         setFilteredSubmissions([]);
-      } finally {
-        setIsLoading(false);
-      }
+        } finally {
+            setIsLoading(false);
+        }
     };
     fetchSubmissions();
   }, []);
-
+  
   // Filtrar y ordenar datos
   useEffect(() => {
     console.log('🔄 Iniciando filtrado de datos...');
@@ -336,12 +336,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
     setShowDetailsModal(false);
     setSelectedSubmission(null);
   };
-
+  
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Fecha inválida';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Fecha inválida';
       return date.toLocaleString('es-ES', { 
         day: '2-digit', 
         month: '2-digit', 
@@ -350,10 +350,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
         minute: '2-digit' 
       });
     } catch (e) {
-      return 'Fecha inválida';
+        return 'Fecha inválida';
     }
   };
-
+  
   const formatValue = (value: any) => {
     if (value === null || value === undefined || value === '') return '-';
     if (value === 'yes') return 'Sí';
@@ -408,7 +408,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
     { label: 'No Especificado', value: submissions.filter(s => !s.affectedPersonalLife || s.affectedPersonalLife === null).length, color: '#6b7280' }
   ];
 
-  if (isLoading) {
+    if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -418,9 +418,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
         </div>
       </div>
     );
-  }
-
-  return (
+    }
+    
+    return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -739,7 +739,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                             {sortField === 'incidentDate' && (
                               <ChevronDownIcon className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
                             )}
-                          </div>
+                        </div>
                         </th>
                         <th 
                           className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
@@ -805,7 +805,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <button
+                            <button 
                               onClick={() => handleViewDetails(sub)}
                               className="px-3 py-1 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700 transition-colors"
                             >
@@ -941,7 +941,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                       <div><span className="font-medium">Descripción Patrón:</span> {formatValue(selectedSubmission.patternDescription)}</div>
                       <div><span className="font-medium">Veces Últimos 30 días:</span> {formatValue(selectedSubmission.timesLast30Days)}</div>
                     </div>
-                  </div>
+                        </div>
                   
                   <div className="bg-slate-50 rounded-lg p-4">
                     <h3 className="font-semibold text-slate-900 mb-3">Complicaciones</h3>
@@ -952,7 +952,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                       <div><span className="font-medium">Intencionalidad Personal:</span> {formatValue(selectedSubmission.personalIntent)}</div>
                     </div>
                   </div>
-                </div>
+                                </div>
 
                 {/* Capturas de Pantalla */}
                 {(selectedSubmission.screenshot1_url || selectedSubmission.screenshot2_url || selectedSubmission.screenshot3_url) && (
@@ -968,7 +968,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                             className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
                             onClick={() => window.open(selectedSubmission.screenshot1_url, '_blank')}
                           />
-                        </div>
+                                </div>
                       )}
                       {selectedSubmission.screenshot2_url && (
                         <div>
@@ -979,7 +979,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                             className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
                             onClick={() => window.open(selectedSubmission.screenshot2_url, '_blank')}
                           />
-                        </div>
+                                </div>
                       )}
                       {selectedSubmission.screenshot3_url && (
                         <div>
@@ -991,11 +991,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                             onClick={() => window.open(selectedSubmission.screenshot3_url, '_blank')}
                           />
                         </div>
-                      )}
-                    </div>
+                    )}
+                </div>
                   </div>
                 )}
-              </div>
+        </div>
               
               <div className="p-6 border-t border-slate-200">
                 <button
@@ -1006,7 +1006,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                 </button>
               </div>
             </div>
-          </div>
+        </div>
         )}
       </div>
     </div>
