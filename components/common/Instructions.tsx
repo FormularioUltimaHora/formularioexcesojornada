@@ -30,6 +30,9 @@ export const Instructions: React.FC = () => {
             Si este comportamiento se repite, este formulario te servirá como base para notificar el incidente a Inspección de Trabajo y para tomar medidas legales si se considera necesario.
         </li>
       </ol>
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded">
+        Toda la información proporcionada por el usuario es guardada y gestionada por el departamento de RRHH del comité de empresa. Ante cualquier duda, contacte por correo electrónico con <a href="mailto:rrhhcomitedomingo@hotmail.com" className="underline text-blue-700">rrhhcomitedomingo@hotmail.com</a>.
+      </div>
     </div>
   );
 };
