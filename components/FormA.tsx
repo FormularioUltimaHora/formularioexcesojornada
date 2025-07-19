@@ -54,7 +54,7 @@ const VALID_DB_FIELDS = [
   'pickupaddress','destinationaddress','traveltimetoorigin','traveltimeorigintodestination','traveltimedestinationtobase','estimatedworktimeorigin',
   'estimatedworktimedestination','totalestimatedservicetime','complications','exceedsremainingtime','unforeseencomplications','affectedpersonallife',
   'exceededoveronehour','excessminutes','impactexplanation','generatedroadrisk','additionalhoursworked','riskdetails','coordinatorname','timeslast30days',
-  'assignmentpattern','personalintent','patterndescription','registerforlegalaction','notifylaborinspectorate','screenshot1_url','screenshot2_url','screenshot3_url'
+  'patterndescription','personalintent','registerforlegalaction','notifylaborinspectorate','screenshot1_url','screenshot2_url','screenshot3_url'
 ];
 
 function cleanDbSubmission(obj: any): any {
@@ -79,35 +79,59 @@ function cleanDbSubmission(obj: any): any {
 function mapToDatabaseFormat(formData: any): any {
   const mapped: any = {};
   
-  // Mapeo directo de campos string
-  const stringFields = [
-    'workerName', 'employeeId', 'incidentDate', 'shiftStartTime', 'shiftEndTime',
-    'locationOnReceipt', 'assignmentTime', 'remainingShiftTime', 'pickupAddress', 
-    'destinationAddress', 'travelTimeToOrigin', 'travelTimeOriginToDestination',
-    'travelTimeDestinationToBase', 'estimatedWorkTimeOrigin', 'estimatedWorkTimeDestination',
-    'totalEstimatedServiceTime', 'complications', 'excessMinutes', 'impactExplanation',
-    'additionalHoursWorked', 'riskDetails', 'coordinatorName', 'timesLast30Days',
-    'patternDescription', 'screenshot1_url', 'screenshot2_url', 'screenshot3_url'
-  ];
+  // Mapeo directo de campos string con nombres exactos de BD
+  const fieldMappings = {
+    'workerName': 'workername',
+    'employeeId': 'employeeid',
+    'incidentDate': 'incidentdate',
+    'shiftStartTime': 'shiftstarttime',
+    'shiftEndTime': 'shiftendtime',
+    'locationOnReceipt': 'locationonreceipt',
+    'assignmentTime': 'assignmenttime',
+    'remainingShiftTime': 'remainingshifttime',
+    'pickupAddress': 'pickupaddress',
+    'destinationAddress': 'destinationaddress',
+    'travelTimeToOrigin': 'traveltimetoorigin',
+    'travelTimeOriginToDestination': 'traveltimeorigintodestination',
+    'travelTimeDestinationToBase': 'traveltimedestinationtobase',
+    'estimatedWorkTimeOrigin': 'estimatedworktimeorigin',
+    'estimatedWorkTimeDestination': 'estimatedworktimedestination',
+    'totalEstimatedServiceTime': 'totalestimatedservicetime',
+    'complications': 'complications',
+    'excessMinutes': 'excessminutes',
+    'impactExplanation': 'impactexplanation',
+    'additionalHoursWorked': 'additionalhoursworked',
+    'riskDetails': 'riskdetails',
+    'coordinatorName': 'coordinatorname',
+    'timesLast30Days': 'timeslast30days',
+    'patternDescription': 'patterndescription',
+    'screenshot1_url': 'screenshot1_url',
+    'screenshot2_url': 'screenshot2_url',
+    'screenshot3_url': 'screenshot3_url'
+  };
   
-  stringFields.forEach(field => {
-    if (formData[field] !== undefined) {
-      const dbField = field.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-      mapped[dbField] = formData[field] || null;
+  Object.entries(fieldMappings).forEach(([frontendField, dbField]) => {
+    if (formData[frontendField] !== undefined) {
+      mapped[dbField] = formData[frontendField] || null;
     }
   });
   
   // Mapeo de campos YesNoNull
-  const yesNoFields = [
-    'exceedsRemainingTime', 'unforeseenComplications', 'affectedPersonalLife',
-    'exceededOverOneHour', 'generatedRoadRisk', 'assignmentPattern',
-    'personalIntent', 'registerForLegalAction', 'notifyLaborInspectorate'
-  ];
+  const yesNoMappings = {
+    'exceedsRemainingTime': 'exceedsremainingtime',
+    'unforeseenComplications': 'unforeseencomplications',
+    'affectedPersonalLife': 'affectedpersonallife',
+    'exceededOverOneHour': 'exceededoveronehour',
+    'generatedRoadRisk': 'generatedroadrisk',
+    'assignmentPattern': 'assignmentpattern',
+    'personalIntent': 'personalintent',
+    'registerForLegalAction': 'registerforlegalaction',
+    'notifyLaborInspectorate': 'notifylaborinspectorate'
+  };
   
-  yesNoFields.forEach(field => {
-    if (formData[field] !== undefined) {
-      const dbField = field.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-      mapped[dbField] = formData[field]; // Mantener 'yes', 'no', o null
+  Object.entries(yesNoMappings).forEach(([frontendField, dbField]) => {
+    if (formData[frontendField] !== undefined) {
+      mapped[dbField] = formData[frontendField]; // Mantener 'yes', 'no', o null
     }
   });
   
