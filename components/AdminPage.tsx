@@ -961,10 +961,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {selectedSubmission.screenshot1_url && (
                         <div>
-                          <p className="text-sm font-medium mb-2">Captura 1:</p>
+                          <p className="text-sm font-medium mb-2">Captura: Tiempo desplazamiento a origen</p>
                           <img 
                             src={selectedSubmission.screenshot1_url} 
-                            alt="Captura 1" 
+                            alt="Captura: Tiempo desplazamiento a origen" 
                             className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
                             onClick={() => window.open(selectedSubmission.screenshot1_url, '_blank')}
                           />
@@ -972,10 +972,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                       )}
                       {selectedSubmission.screenshot2_url && (
                         <div>
-                          <p className="text-sm font-medium mb-2">Captura 2:</p>
+                          <p className="text-sm font-medium mb-2">Captura: Tiempo origen-destino</p>
                           <img 
                             src={selectedSubmission.screenshot2_url} 
-                            alt="Captura 2" 
+                            alt="Captura: Tiempo origen-destino" 
                             className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
                             onClick={() => window.open(selectedSubmission.screenshot2_url, '_blank')}
                           />
@@ -983,10 +983,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                       )}
                       {selectedSubmission.screenshot3_url && (
                         <div>
-                          <p className="text-sm font-medium mb-2">Captura 3:</p>
+                          <p className="text-sm font-medium mb-2">Captura: Tiempo destino a base</p>
                           <img 
                             src={selectedSubmission.screenshot3_url} 
-                            alt="Captura 3" 
+                            alt="Captura: Tiempo destino a base" 
                             className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
                             onClick={() => window.open(selectedSubmission.screenshot3_url, '_blank')}
                           />
