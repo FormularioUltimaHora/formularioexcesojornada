@@ -9,143 +9,65 @@ import { SectionCard } from './common/SectionCard';
 import { supabase } from '../constants';
 import { useRef } from 'react';
 
-// Función para convertir camelCase a snake_case
-function toSnakeCase(obj: any): any {
-  if (Array.isArray(obj)) return obj.map(toSnakeCase);
-  if (obj !== null && typeof obj === 'object') {
-    const newObj: any = {};
-    for (const key in obj) {
-      if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
-      const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-      newObj[snakeKey] = toSnakeCase(obj[key]);
-    }
-    return newObj;
-  }
-  return obj;
-}
-
-function toSnakeCaseAndFlatten(obj: any): any {
-  if (Array.isArray(obj)) return obj.map(toSnakeCaseAndFlatten);
-  if (obj !== null && typeof obj === 'object') {
-    const newObj: any = {};
-    for (const key in obj) {
-      if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
-      if (key === 'serviceType' && typeof obj[key] === 'object') {
-        // Aplanar serviceType
-        for (const subKey in obj[key]) {
-          if (!Object.prototype.hasOwnProperty.call(obj[key], subKey)) continue;
-          const flatKey = `servicetype_${subKey.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)}`;
-          newObj[flatKey] = obj[key][subKey];
-        }
-      } else {
-        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-        newObj[snakeKey] = toSnakeCaseAndFlatten(obj[key]);
-      }
-    }
-    return newObj;
-  }
-  return obj;
-}
-
-// Lista de campos válidos en la tabla submissions
-const VALID_DB_FIELDS = [
-  'id','submissiontimestamp','workername','employeeid','incidentdate','shiftstarttime','shiftendtime','locationonreceipt',
-  'servicetype_hospitaldischarge','servicetype_nonurgenttransfer','servicetype_other','servicetype_othertext','assignmenttime','remainingshifttime',
-  'pickupaddress','destinationaddress','traveltimetoorigin','traveltimeorigintodestination','traveltimedestinationtobase','estimatedworktimeorigin',
-  'estimatedworktimedestination','totalestimatedservicetime','complications','exceedsremainingtime','unforeseencomplications','affectedpersonallife',
-  'exceededoveronehour','excessminutes','impactexplanation','generatedroadrisk','additionalhoursworked','riskdetails','coordinatorname','timeslast30days',
-  'patterndescription','personalintent','registerforlegalaction','notifylaborinspectorate','screenshot1_url','screenshot2_url','screenshot3_url'
-];
-
-function cleanDbSubmission(obj: any): any {
-  const cleaned: any = {};
-  for (const key in obj) {
-    if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
-    if (VALID_DB_FIELDS.includes(key)) {
-      // Convierte booleanos a boolean, strings a string, null a null
-      if (typeof obj[key] === 'boolean' || typeof obj[key] === 'string' || obj[key] === null) {
-        cleaned[key] = obj[key];
-      } else if (typeof obj[key] === 'number') {
-        cleaned[key] = obj[key].toString();
-      } else {
-        cleaned[key] = obj[key] ? obj[key].toString() : null;
-      }
-    }
-  }
-  return cleaned;
-}
-
-// Función profesional para mapear datos del frontend a la base de datos
-function mapToDatabaseFormat(formData: any): any {
-  const mapped: any = {};
+// Función profesional para mapear datos del formulario a la base de datos
+// Entiende que es un formulario de registro de incidencias con diferentes tipos de campos
+function mapFormToDatabase(formData: any): any {
+  // Crear objeto con todos los campos de la base de datos
+  const databaseRecord: any = {};
   
-  // Mapeo directo de campos string con nombres exactos de BD
-  const fieldMappings = {
-    'id': 'id', // Campo obligatorio que no puede ser null
-    'submissionTimestamp': 'submissiontimestamp',
-    'workerName': 'workername',
-    'employeeId': 'employeeid',
-    'incidentDate': 'incidentdate',
-    'shiftStartTime': 'shiftstarttime',
-    'shiftEndTime': 'shiftendtime',
-    'locationOnReceipt': 'locationonreceipt',
-    'assignmentTime': 'assignmenttime',
-    'remainingShiftTime': 'remainingshifttime',
-    'pickupAddress': 'pickupaddress',
-    'destinationAddress': 'destinationaddress',
-    'travelTimeToOrigin': 'traveltimetoorigin',
-    'travelTimeOriginToDestination': 'traveltimeorigintodestination',
-    'travelTimeDestinationToBase': 'traveltimedestinationtobase',
-    'estimatedWorkTimeOrigin': 'estimatedworktimeorigin',
-    'estimatedWorkTimeDestination': 'estimatedworktimedestination',
-    'totalEstimatedServiceTime': 'totalestimatedservicetime',
-    'complications': 'complications',
-    'excessMinutes': 'excessminutes',
-    'impactExplanation': 'impactexplanation',
-    'additionalHoursWorked': 'additionalhoursworked',
-    'riskDetails': 'riskdetails',
-    'coordinatorName': 'coordinatorname',
-    'timesLast30Days': 'timeslast30days',
-    'patternDescription': 'patterndescription',
-    'screenshot1_url': 'screenshot1_url',
-    'screenshot2_url': 'screenshot2_url',
-    'screenshot3_url': 'screenshot3_url'
-  };
+  // 1. CAMPOS OBLIGATORIOS (siempre presentes)
+  databaseRecord.id = formData.id;
+  databaseRecord.submissiontimestamp = formData.submissionTimestamp;
   
-  Object.entries(fieldMappings).forEach(([frontendField, dbField]) => {
-    if (formData[frontendField] !== undefined) {
-      mapped[dbField] = formData[frontendField] || null;
-    }
-  });
+  // 2. CAMPOS DE TEXTO (strings)
+  databaseRecord.workername = formData.workerName || '';
+  databaseRecord.employeeid = formData.employeeId || '';
+  databaseRecord.incidentdate = formData.incidentDate || '';
+  databaseRecord.shiftstarttime = formData.shiftStartTime || '';
+  databaseRecord.shiftendtime = formData.shiftEndTime || '';
+  databaseRecord.locationonreceipt = formData.locationOnReceipt || '';
+  databaseRecord.assignmenttime = formData.assignmentTime || '';
+  databaseRecord.remainingshifttime = formData.remainingShiftTime || '';
+  databaseRecord.pickupaddress = formData.pickupAddress || '';
+  databaseRecord.destinationaddress = formData.destinationAddress || '';
+  databaseRecord.traveltimetoorigin = formData.travelTimeToOrigin || '';
+  databaseRecord.traveltimeorigintodestination = formData.travelTimeOriginToDestination || '';
+  databaseRecord.traveltimedestinationtobase = formData.travelTimeDestinationToBase || '';
+  databaseRecord.estimatedworktimeorigin = formData.estimatedWorkTimeOrigin || '';
+  databaseRecord.estimatedworktimedestination = formData.estimatedWorkTimeDestination || '';
+  databaseRecord.totalestimatedservicetime = formData.totalEstimatedServiceTime || '';
+  databaseRecord.complications = formData.complications || '';
+  databaseRecord.excessminutes = formData.excessMinutes || '';
+  databaseRecord.impactexplanation = formData.impactExplanation || '';
+  databaseRecord.additionalhoursworked = formData.additionalHoursWorked || '';
+  databaseRecord.riskdetails = formData.riskDetails || '';
+  databaseRecord.coordinatorname = formData.coordinatorName || '';
+  databaseRecord.timeslast30days = formData.timesLast30Days || '';
+  databaseRecord.patterndescription = formData.patternDescription || '';
   
-  // Mapeo de campos YesNoNull
-  const yesNoMappings = {
-    'exceedsRemainingTime': 'exceedsremainingtime',
-    'unforeseenComplications': 'unforeseencomplications',
-    'affectedPersonalLife': 'affectedpersonallife',
-    'exceededOverOneHour': 'exceededoveronehour',
-    'generatedRoadRisk': 'generatedroadrisk',
-    'assignmentPattern': 'assignmentpattern',
-    'personalIntent': 'personalintent',
-    'registerForLegalAction': 'registerforlegalaction',
-    'notifyLaborInspectorate': 'notifylaborinspectorate'
-  };
+  // 3. CAMPOS DE TIPO YES/NO (radio buttons)
+  databaseRecord.exceedsremainingtime = formData.exceedsRemainingTime || null;
+  databaseRecord.unforeseencomplications = formData.unforeseenComplications || null;
+  databaseRecord.affectedpersonallife = formData.affectedPersonalLife || null;
+  databaseRecord.exceededoveronehour = formData.exceededOverOneHour || null;
+  databaseRecord.generatedroadrisk = formData.generatedRoadRisk || null;
+  databaseRecord.assignmentpattern = formData.assignmentPattern || null;
+  databaseRecord.personalintent = formData.personalIntent || null;
+  databaseRecord.registerforlegalaction = formData.registerForLegalAction || null;
+  databaseRecord.notifylaborinspectorate = formData.notifyLaborInspectorate || null;
   
-  Object.entries(yesNoMappings).forEach(([frontendField, dbField]) => {
-    if (formData[frontendField] !== undefined) {
-      mapped[dbField] = formData[frontendField]; // Mantener 'yes', 'no', o null
-    }
-  });
+  // 4. CAMPOS BOOLEANOS (checkboxes de tipo de servicio)
+  databaseRecord.servicetype_hospitaldischarge = formData.serviceType?.hospitalDischarge || false;
+  databaseRecord.servicetype_nonurgenttransfer = formData.serviceType?.nonUrgentTransfer || false;
+  databaseRecord.servicetype_other = formData.serviceType?.other || false;
+  databaseRecord.servicetype_othertext = formData.serviceType?.otherText || '';
   
-  // Mapeo de serviceType (booleanos)
-  if (formData.serviceType) {
-    mapped.servicetype_hospitaldischarge = formData.serviceType.hospitalDischarge || false;
-    mapped.servicetype_nonurgenttransfer = formData.serviceType.nonUrgentTransfer || false;
-    mapped.servicetype_other = formData.serviceType.other || false;
-    mapped.servicetype_othertext = formData.serviceType.otherText || '';
-  }
+  // 5. CAMPOS DE CAPTURAS DE PANTALLA (URLs)
+  databaseRecord.screenshot1_url = formData.screenshot1_url || '';
+  databaseRecord.screenshot2_url = formData.screenshot2_url || '';
+  databaseRecord.screenshot3_url = formData.screenshot3_url || '';
   
-  return mapped;
+  return databaseRecord;
 }
 
 export const FormA: React.FC = () => {
@@ -257,7 +179,7 @@ export const FormA: React.FC = () => {
       };
       
       // Mapeo profesional a formato de base de datos
-      const dbSubmission = mapToDatabaseFormat(newSubmission);
+      const dbSubmission = mapFormToDatabase(newSubmission);
       console.log('Payload enviado a Supabase:', dbSubmission);
       const { error: supabaseError } = await supabase.from('submissions').insert([dbSubmission]);
       if (supabaseError) {
