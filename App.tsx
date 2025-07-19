@@ -120,13 +120,7 @@ const App: React.FC = () => {
             {mainContent()}
         </main>
         
-        <footer className="text-center mt-12 text-slate-500 text-sm">
-            <p>Diseñado para una evaluación comparativa de la experiencia de usuario.</p>
-             <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-2 hover:text-indigo-600 transition-colors">
-                <GeminiIcon className="w-5 h-5" />
-                <span>Powered by Gemini</span>
-            </a>
-        </footer>
+        {/* Eliminar footer de evaluación comparativa y Gemini */}
       </div>
     </div>
   );

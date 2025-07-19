@@ -12,9 +12,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) 
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  // Lista de usuarios válidos
+  const USERS = [
+    { username: 'rrhhcomite', password: 'elteusindi.cat' },
+    { username: 'administrador', password: 'adminadmin' }
+  ];
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'admin') {
+    const found = USERS.find(u => u.username === username && u.password === password);
+    if (found) {
       setError('');
       onLoginSuccess();
     } else {
