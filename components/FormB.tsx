@@ -149,6 +149,53 @@ export const FormB: React.FC = () => {
     return cleaned;
   }
 
+  // Función profesional para mapear datos del frontend a la base de datos
+  function mapToDatabaseFormat(formData: any): any {
+    const mapped: any = {};
+    
+    // Mapeo directo de campos string
+    const stringFields = [
+      'workerName', 'employeeId', 'incidentDate', 'shiftStartTime', 'shiftEndTime',
+      'locationOnReceipt', 'assignmentTime', 'remainingShiftTime', 'pickupAddress', 
+      'destinationAddress', 'travelTimeToOrigin', 'travelTimeOriginToDestination',
+      'travelTimeDestinationToBase', 'estimatedWorkTimeOrigin', 'estimatedWorkTimeDestination',
+      'totalEstimatedServiceTime', 'complications', 'excessMinutes', 'impactExplanation',
+      'additionalHoursWorked', 'riskDetails', 'coordinatorName', 'timesLast30Days',
+      'patternDescription', 'screenshot1_url', 'screenshot2_url', 'screenshot3_url'
+    ];
+    
+    stringFields.forEach(field => {
+      if (formData[field] !== undefined) {
+        const dbField = field.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        mapped[dbField] = formData[field] || null;
+      }
+    });
+    
+    // Mapeo de campos YesNoNull
+    const yesNoFields = [
+      'exceedsRemainingTime', 'unforeseenComplications', 'affectedPersonalLife',
+      'exceededOverOneHour', 'generatedRoadRisk', 'assignmentPattern',
+      'personalIntent', 'registerForLegalAction', 'notifyLaborInspectorate'
+    ];
+    
+    yesNoFields.forEach(field => {
+      if (formData[field] !== undefined) {
+        const dbField = field.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        mapped[dbField] = formData[field]; // Mantener 'yes', 'no', o null
+      }
+    });
+    
+    // Mapeo de serviceType (booleanos)
+    if (formData.serviceType) {
+      mapped.servicetype_hospitaldischarge = formData.serviceType.hospitalDischarge || false;
+      mapped.servicetype_nonurgenttransfer = formData.serviceType.nonUrgentTransfer || false;
+      mapped.servicetype_other = formData.serviceType.other || false;
+      mapped.servicetype_othertext = formData.serviceType.otherText || '';
+    }
+    
+    return mapped;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -189,9 +236,9 @@ export const FormB: React.FC = () => {
         screenshot2_url: screenshotUrls[1],
         screenshot3_url: screenshotUrls[2],
       };
-      // Mapeo a snake_case y aplanado antes de guardar
-      let dbSubmission = toSnakeCaseAndFlatten(newSubmission);
-      dbSubmission = cleanDbSubmission(dbSubmission);
+      
+      // Mapeo profesional a formato de base de datos
+      const dbSubmission = mapToDatabaseFormat(newSubmission);
       console.log('Payload enviado a Supabase:', dbSubmission);
       const { error: supabaseError } = await supabase.from('submissions').insert([dbSubmission]);
       if (supabaseError) throw supabaseError;
