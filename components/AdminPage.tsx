@@ -23,6 +23,21 @@ const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label
     );
 };
 
+// Función para convertir snake_case a camelCase
+function toCamelCase(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(toCamelCase);
+  if (obj !== null && typeof obj === 'object') {
+    const newObj: any = {};
+    for (const key in obj) {
+      if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      newObj[camelKey] = toCamelCase(obj[key]);
+    }
+    return newObj;
+  }
+  return obj;
+}
+
 export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
   const [submissions, setSubmissions] = useState<FormData[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -36,8 +51,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
         try {
             const { data, error: supabaseError } = await supabase.from('submissions').select('*');
             if (supabaseError) throw supabaseError;
-            (data || []).sort((a, b) => new Date(b.submissionTimestamp).getTime() - new Date(a.submissionTimestamp).getTime());
-            setSubmissions(data || []);
+            // Mapeo a camelCase al leer
+            const mapped = toCamelCase(data || []);
+            (mapped || []).sort((a: any, b: any) => new Date(b.submissionTimestamp).getTime() - new Date(a.submissionTimestamp).getTime());
+            setSubmissions(mapped || []);
         } catch (err) {
             setError('No se pudo conectar a la base de datos.');
             setSubmissions([]);
@@ -128,6 +145,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                     </div>
                     {expandedId === sub.id && (
                         <div className="p-4 border-t border-slate-200 bg-slate-50/50">
+                            <div className="mb-4">
+                                <span className="font-bold text-slate-700">ID del formulario:</span> <span className="text-xs text-slate-500">{sub.id}</span><br/>
+                                <span className="font-bold text-slate-700">Trabajador:</span> <span className="text-slate-800">{sub.workerName}</span><br/>
+                                <span className="font-bold text-slate-700">Fecha de envío:</span> <span className="text-slate-800">{formatDate(sub.submissionTimestamp)}</span>
+                            </div>
                             <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-3">
                                 <DetailItem label="Nº Empleado" value={sub.employeeId} />
                                 <DetailItem label="Inicio Jornada" value={sub.shiftStartTime} />
@@ -155,6 +177,36 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                                     <DetailItem label="Descripción Patrón" value={sub.patternDescription} />
                                 </div>
                             </dl>
+                            {/* Mostrar capturas con etiquetas claras */}
+                            <div className="mt-4">
+                                <div className="font-semibold text-slate-700 mb-2">Capturas de pantalla asociadas:</div>
+                                <div className="flex flex-col gap-4">
+                                    <div>
+                                        <div className="text-xs text-slate-600 mb-1">Captura: Tiempo desplazamiento a origen</div>
+                                        {sub.screenshot1_url ? (
+                                            <a href={sub.screenshot1_url} target="_blank" rel="noopener noreferrer">
+                                                <img src={sub.screenshot1_url} alt="Captura 1 - Tiempo desplazamiento a origen" className="w-40 h-40 object-cover rounded shadow" />
+                                            </a>
+                                        ) : <span className="text-red-500 text-xs">No disponible</span>}
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-slate-600 mb-1">Captura: Tiempo origen-destino</div>
+                                        {sub.screenshot2_url ? (
+                                            <a href={sub.screenshot2_url} target="_blank" rel="noopener noreferrer">
+                                                <img src={sub.screenshot2_url} alt="Captura 2 - Tiempo origen-destino" className="w-40 h-40 object-cover rounded shadow" />
+                                            </a>
+                                        ) : <span className="text-red-500 text-xs">No disponible</span>}
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-slate-600 mb-1">Captura: Tiempo destino a base</div>
+                                        {sub.screenshot3_url ? (
+                                            <a href={sub.screenshot3_url} target="_blank" rel="noopener noreferrer">
+                                                <img src={sub.screenshot3_url} alt="Captura 3 - Tiempo destino a base" className="w-40 h-40 object-cover rounded shadow" />
+                                            </a>
+                                        ) : <span className="text-red-500 text-xs">No disponible</span>}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>

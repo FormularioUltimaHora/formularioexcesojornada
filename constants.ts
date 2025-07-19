@@ -24,6 +24,7 @@ export const initialFormData: Omit<FormData, 'id' | 'submissionTimestamp'> = {
   destinationAddress: '',
   travelTimeToOrigin: '',
   travelTimeOriginToDestination: '',
+  travelTimeDestinationToBase: '', // Campo faltante que causaba el error
   estimatedWorkTimeOrigin: '',
   estimatedWorkTimeDestination: '',
   totalEstimatedServiceTime: '',
@@ -44,6 +45,9 @@ export const initialFormData: Omit<FormData, 'id' | 'submissionTimestamp'> = {
   patternDescription: '',
   registerForLegalAction: null,
   notifyLaborInspectorate: null,
+  screenshot1_url: '', // Campos de capturas obligatorias
+  screenshot2_url: '',
+  screenshot3_url: '',
 };
 
 export const supabase = createClient(

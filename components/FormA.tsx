@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { initialFormData } from '../constants';
 import { FormData, YesNoNull } from '../types';
 import { Input } from './common/Input';
@@ -9,12 +9,96 @@ import { SectionCard } from './common/SectionCard';
 import { supabase } from '../constants';
 import { useRef } from 'react';
 
+// Función para convertir camelCase a snake_case
+function toSnakeCase(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(toSnakeCase);
+  if (obj !== null && typeof obj === 'object') {
+    const newObj: any = {};
+    for (const key in obj) {
+      if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+      const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+      newObj[snakeKey] = toSnakeCase(obj[key]);
+    }
+    return newObj;
+  }
+  return obj;
+}
+
+function toSnakeCaseAndFlatten(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(toSnakeCaseAndFlatten);
+  if (obj !== null && typeof obj === 'object') {
+    const newObj: any = {};
+    for (const key in obj) {
+      if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+      if (key === 'serviceType' && typeof obj[key] === 'object') {
+        // Aplanar serviceType
+        for (const subKey in obj[key]) {
+          if (!Object.prototype.hasOwnProperty.call(obj[key], subKey)) continue;
+          const flatKey = `servicetype_${subKey.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)}`;
+          newObj[flatKey] = obj[key][subKey];
+        }
+      } else {
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        newObj[snakeKey] = toSnakeCaseAndFlatten(obj[key]);
+      }
+    }
+    return newObj;
+  }
+  return obj;
+}
+
+// Lista de campos válidos en la tabla submissions
+const VALID_DB_FIELDS = [
+  'id','submissiontimestamp','workername','employeeid','incidentdate','shiftstarttime','shiftendtime','locationonreceipt',
+  'servicetypehospitaldischarge','servicetypenonurgenttransfer','servicetypeother','servicetypeothertext','assignmenttime','remainingshifttime',
+  'pickupaddress','destinationaddress','traveltimetoorigin','traveltimeorigintodestination','traveltimedestinationtobase','estimatedworktimeorigin',
+  'estimatedworktimedestination','totalestimatedservicetime','complications','exceedsremainingtime','unforeseencomplications','affectedpersonallife',
+  'exceededoveronehour','excessminutes','impactexplanation','generatedroadrisk','additionalhoursworked','riskdetails','coordinatorname','timeslast30days',
+  'assignmentpattern','personalintent','patterndescription','registerforlegalaction','notifylaborinspectorate','screenshot1_url','screenshot2_url','screenshot3_url'
+];
+
+function cleanDbSubmission(obj: any): any {
+  const cleaned: any = {};
+  for (const key in obj) {
+    if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+    if (VALID_DB_FIELDS.includes(key)) {
+      // Convierte booleanos a boolean, strings a string, null a null
+      if (typeof obj[key] === 'boolean' || typeof obj[key] === 'string' || obj[key] === null) {
+        cleaned[key] = obj[key];
+      } else if (typeof obj[key] === 'number') {
+        cleaned[key] = obj[key].toString();
+      } else {
+        cleaned[key] = obj[key] ? obj[key].toString() : null;
+      }
+    }
+  }
+  return cleaned;
+}
+
 export const FormA: React.FC = () => {
   const [formData, setFormData] = useState<Omit<FormData, 'id' | 'submissionTimestamp'>>(initialFormData);
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [screenshots, setScreenshots] = useState<(File | null)[]>([null, null, null]);
+
+  // Calcular automáticamente el tiempo completo estimado del servicio
+  useEffect(() => {
+    const toNumber = (val: string) => parseInt(val) || 0;
+    const total =
+      toNumber(formData.travelTimeToOrigin) +
+      toNumber(formData.travelTimeOriginToDestination) +
+      toNumber(formData.travelTimeDestinationToBase) +
+      toNumber(formData.estimatedWorkTimeOrigin) +
+      toNumber(formData.estimatedWorkTimeDestination);
+    setFormData(prev => ({ ...prev, totalEstimatedServiceTime: total ? total.toString() : '' }));
+  }, [
+    formData.travelTimeToOrigin,
+    formData.travelTimeOriginToDestination,
+    formData.travelTimeDestinationToBase,
+    formData.estimatedWorkTimeOrigin,
+    formData.estimatedWorkTimeDestination
+  ]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -63,12 +147,24 @@ export const FormA: React.FC = () => {
     setIsLoading(true);
     setError(null);
 
-    // Validar que las 3 capturas están presentes
-    if (!screenshots[0] || !screenshots[1] || !screenshots[2]) {
-      setError('Debes adjuntar las 3 capturas de pantalla obligatorias.');
+    // Validación estricta de todos los campos obligatorios
+    if (
+      !formData.workerName ||
+      !formData.employeeId ||
+      !formData.incidentDate ||
+      !formData.travelTimeToOrigin ||
+      !formData.travelTimeOriginToDestination ||
+      !formData.travelTimeDestinationToBase ||
+      !formData.estimatedWorkTimeOrigin ||
+      !formData.estimatedWorkTimeDestination ||
+      !formData.totalEstimatedServiceTime ||
+      !screenshots[0] || !screenshots[1] || !screenshots[2]
+    ) {
+      setError('Por favor, rellena todos los campos obligatorios y adjunta las 3 capturas.');
       setIsLoading(false);
       return;
     }
+
     const safeWorkerName = formData.workerName.replace(/\s/g, '_') || 'sin_nombre';
     const safeEmployeeId = formData.employeeId || 'sin_id';
     const submissionId = `${safeEmployeeId}-${safeWorkerName}-${Date.now()}`;
@@ -86,12 +182,24 @@ export const FormA: React.FC = () => {
         screenshot2_url: screenshotUrls[1],
         screenshot3_url: screenshotUrls[2],
       };
-      const { error: supabaseError } = await supabase.from('submissions').insert([newSubmission]);
-      if (supabaseError) throw supabaseError;
+      // Mapeo a snake_case y aplanado antes de guardar
+      let dbSubmission = toSnakeCaseAndFlatten(newSubmission);
+      dbSubmission = cleanDbSubmission(dbSubmission);
+      console.log('Payload enviado a Supabase:', dbSubmission);
+      const { error: supabaseError } = await supabase.from('submissions').insert([dbSubmission]);
+      if (supabaseError) {
+        console.error('Error Supabase:', supabaseError);
+        throw supabaseError;
+      }
       setSubmitted(true);
       setError(null);
     } catch (err: any) {
-      setError('No se pudo conectar a la base de datos o subir las imágenes. Inténtelo de nuevo.');
+      setError('No se pudo conectar a la base de datos o algún campo es incorrecto. Revisa los datos e inténtalo de nuevo.');
+      if (err && err.message) {
+        console.error('Error detallado:', err.message);
+      } else {
+        console.error('Error desconocido:', err);
+      }
     } finally {
       setIsLoading(false);
       window.scrollTo(0, 0);
@@ -102,13 +210,13 @@ export const FormA: React.FC = () => {
     return (
       <div className="bg-white p-8 rounded-lg shadow-xl text-center">
         <h2 className="text-2xl font-bold text-green-600">¡Registro Guardado!</h2>
-        <p className="mt-4 text-slate-600">Gracias por documentar el incidente. Su información ha sido procesada.</p>
-        {error && <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-md">{error}</p>}
+        <p className="mt-4 text-slate-600">Gracias por documentar el incidente. Su información ha sido procesada y guardada correctamente.</p>
         <button
           onClick={() => {
             setFormData(initialFormData);
             setSubmitted(false);
             setError(null);
+            setScreenshots([null, null, null]);
           }}
           className="mt-6 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors"
         >
@@ -172,7 +280,7 @@ export const FormA: React.FC = () => {
         </div>
         <Input label="Tiempo trabajo en origen (min)" name="estimatedWorkTimeOrigin" type="number" value={formData.estimatedWorkTimeOrigin} onChange={handleChange} containerClassName="sm:col-span-3" />
         <Input label="Tiempo trabajo en destino (min)" name="estimatedWorkTimeDestination" type="number" value={formData.estimatedWorkTimeDestination} onChange={handleChange} containerClassName="sm:col-span-3" />
-        <Input label="Tiempo completo estimado del servicio (min)" name="totalEstimatedServiceTime" type="number" value={formData.totalEstimatedServiceTime} onChange={handleChange} containerClassName="sm:col-span-6" />
+        <Input label="Tiempo completo estimado del servicio (min)" name="totalEstimatedServiceTime" type="number" value={formData.totalEstimatedServiceTime} onChange={() => {}} containerClassName="sm:col-span-6" readOnly />
         <Textarea label="Complicaciones en la ejecución" name="complications" placeholder="Detallar complicaciones (ascensor, tercer piso sin ascensor, etc.)" value={formData.complications} onChange={handleChange} containerClassName="sm:col-span-6" />
       </SectionCard>
 
@@ -205,6 +313,7 @@ export const FormA: React.FC = () => {
       </SectionCard>
 
       <div className="flex justify-end pt-4">
+        {error && <div className="mb-4 w-full text-center text-red-600 bg-red-100 rounded p-2">{error}</div>}
         <button
           type="submit"
           disabled={isLoading}
