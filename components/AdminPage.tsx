@@ -218,6 +218,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
   const [sortField, setSortField] = useState<string>('submissionTimestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [activeTab, setActiveTab] = useState<'overview' | 'details' | 'analytics'>('overview');
+  const [selectedSubmission, setSelectedSubmission] = useState<FormData | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -323,6 +325,16 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
   const handleExport = () => {
     const timestamp = new Date().toISOString().split('T')[0];
     exportToCSV(filteredSubmissions, `registros_incidencias_${timestamp}`);
+  };
+
+  const handleViewDetails = (submission: FormData) => {
+    setSelectedSubmission(submission);
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseDetails = () => {
+    setShowDetailsModal(false);
+    setSelectedSubmission(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -749,6 +761,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                           Acciones Legales
                         </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Acciones
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
@@ -789,6 +804,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                               {formatValue(sub.registerForLegalAction)}
                             </div>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button
+                              onClick={() => handleViewDetails(sub)}
+                              className="px-3 py-1 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700 transition-colors"
+                            >
+                              Ver Detalles
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -796,6 +819,193 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Modal de Detalles */}
+        {showDetailsModal && selectedSubmission && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-slate-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    Detalles del Formulario - {selectedSubmission.workerName}
+                  </h2>
+                  <button
+                    onClick={handleCloseDetails}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                {/* Información Básica */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Información del Trabajador</h3>
+                    <div className="space-y-2">
+                      <div><span className="font-medium">Nombre:</span> {formatValue(selectedSubmission.workerName)}</div>
+                      <div><span className="font-medium">Nº Empleado:</span> {formatValue(selectedSubmission.employeeId)}</div>
+                      <div><span className="font-medium">Coordinador:</span> {formatValue(selectedSubmission.coordinatorName)}</div>
+                      <div><span className="font-medium">Fecha Incidente:</span> {formatValue(selectedSubmission.incidentDate)}</div>
+                      <div><span className="font-medium">Fecha Envío:</span> {formatDate(selectedSubmission.submissionTimestamp)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Jornada Laboral</h3>
+                    <div className="space-y-2">
+                      <div><span className="font-medium">Inicio Jornada:</span> {formatValue(selectedSubmission.shiftStartTime)}</div>
+                      <div><span className="font-medium">Fin Jornada:</span> {formatValue(selectedSubmission.shiftEndTime)}</div>
+                      <div><span className="font-medium">Hora Asignación:</span> {formatValue(selectedSubmission.assignmentTime)}</div>
+                      <div><span className="font-medium">Tiempo Restante:</span> {formatValue(selectedSubmission.remainingShiftTime)} min</div>
+                      <div><span className="font-medium">Exceso:</span> {formatValue(selectedSubmission.excessMinutes)} min</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ubicaciones y Tiempos */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Ubicaciones</h3>
+                    <div className="space-y-2">
+                      <div><span className="font-medium">Ubicación Recibo:</span> {formatValue(selectedSubmission.locationOnReceipt)}</div>
+                      <div><span className="font-medium">Dirección Recogida:</span> {formatValue(selectedSubmission.pickupAddress)}</div>
+                      <div><span className="font-medium">Dirección Destino:</span> {formatValue(selectedSubmission.destinationAddress)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Tiempos de Viaje</h3>
+                    <div className="space-y-2">
+                      <div><span className="font-medium">Al Origen:</span> {formatValue(selectedSubmission.travelTimeToOrigin)} min</div>
+                      <div><span className="font-medium">Origen a Destino:</span> {formatValue(selectedSubmission.travelTimeOriginToDestination)} min</div>
+                      <div><span className="font-medium">Destino a Base:</span> {formatValue(selectedSubmission.travelTimeDestinationToBase)} min</div>
+                      <div><span className="font-medium">Tiempo Total Estimado:</span> {formatValue(selectedSubmission.totalEstimatedServiceTime)} min</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tipo de Servicio */}
+                <div className="bg-slate-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-slate-900 mb-3">Tipo de Servicio</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center">
+                      <input type="checkbox" checked={selectedSubmission.serviceType?.hospitalDischarge || false} readOnly className="mr-2" />
+                      <span>Alta Hospitalaria</span>
+                    </div>
+                    <div className="flex items-center">
+                      <input type="checkbox" checked={selectedSubmission.serviceType?.nonUrgentTransfer || false} readOnly className="mr-2" />
+                      <span>Traslado No Urgente</span>
+                    </div>
+                    <div className="flex items-center">
+                      <input type="checkbox" checked={selectedSubmission.serviceType?.other || false} readOnly className="mr-2" />
+                      <span>Otro: {formatValue(selectedSubmission.serviceType?.otherText)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Impacto y Consecuencias */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Impacto Personal</h3>
+                    <div className="space-y-2">
+                      <div><span className="font-medium">Afectó Vida Personal:</span> {formatValue(selectedSubmission.affectedPersonalLife)}</div>
+                      <div><span className="font-medium">Explicación Impacto:</span> {formatValue(selectedSubmission.impactExplanation)}</div>
+                      <div><span className="font-medium">Excedió 1 Hora:</span> {formatValue(selectedSubmission.exceededOverOneHour)}</div>
+                      <div><span className="font-medium">Horas Extra Trabajadas:</span> {formatValue(selectedSubmission.additionalHoursWorked)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Riesgos y Acciones</h3>
+                    <div className="space-y-2">
+                      <div><span className="font-medium">Generó Riesgo Vial:</span> {formatValue(selectedSubmission.generatedRoadRisk)}</div>
+                      <div><span className="font-medium">Detalles Riesgo:</span> {formatValue(selectedSubmission.riskDetails)}</div>
+                      <div><span className="font-medium">Registrar Acción Legal:</span> {formatValue(selectedSubmission.registerForLegalAction)}</div>
+                      <div><span className="font-medium">Notificar Inspección:</span> {formatValue(selectedSubmission.notifyLaborInspectorate)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Patrones y Frecuencia */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Patrones de Asignación</h3>
+                    <div className="space-y-2">
+                      <div><span className="font-medium">Patrón Detectado:</span> {formatValue(selectedSubmission.assignmentPattern)}</div>
+                      <div><span className="font-medium">Descripción Patrón:</span> {formatValue(selectedSubmission.patternDescription)}</div>
+                      <div><span className="font-medium">Veces Últimos 30 días:</span> {formatValue(selectedSubmission.timesLast30Days)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Complicaciones</h3>
+                    <div className="space-y-2">
+                      <div><span className="font-medium">Complicaciones:</span> {formatValue(selectedSubmission.complications)}</div>
+                      <div><span className="font-medium">Excede Tiempo Restante:</span> {formatValue(selectedSubmission.exceedsRemainingTime)}</div>
+                      <div><span className="font-medium">Complicaciones Imprevistas:</span> {formatValue(selectedSubmission.unforeseenComplications)}</div>
+                      <div><span className="font-medium">Intencionalidad Personal:</span> {formatValue(selectedSubmission.personalIntent)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Capturas de Pantalla */}
+                {(selectedSubmission.screenshot1_url || selectedSubmission.screenshot2_url || selectedSubmission.screenshot3_url) && (
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Capturas de Pantalla</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {selectedSubmission.screenshot1_url && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Captura 1:</p>
+                          <img 
+                            src={selectedSubmission.screenshot1_url} 
+                            alt="Captura 1" 
+                            className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
+                            onClick={() => window.open(selectedSubmission.screenshot1_url, '_blank')}
+                          />
+                        </div>
+                      )}
+                      {selectedSubmission.screenshot2_url && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Captura 2:</p>
+                          <img 
+                            src={selectedSubmission.screenshot2_url} 
+                            alt="Captura 2" 
+                            className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
+                            onClick={() => window.open(selectedSubmission.screenshot2_url, '_blank')}
+                          />
+                        </div>
+                      )}
+                      {selectedSubmission.screenshot3_url && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Captura 3:</p>
+                          <img 
+                            src={selectedSubmission.screenshot3_url} 
+                            alt="Captura 3" 
+                            className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
+                            onClick={() => window.open(selectedSubmission.screenshot3_url, '_blank')}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-6 border-t border-slate-200">
+                <button
+                  onClick={handleCloseDetails}
+                  className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
