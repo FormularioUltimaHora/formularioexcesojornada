@@ -223,15 +223,32 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
 
   // Filtrar y ordenar datos
   useEffect(() => {
+    console.log('🔄 Iniciando filtrado de datos...');
+    console.log('📊 Datos originales:', submissions);
+    console.log('🔍 Término de búsqueda:', searchTerm);
+    
     let filtered = submissions.filter(sub => {
       const searchLower = searchTerm.toLowerCase();
-      return (
+      const matches = (
         sub.workerName?.toLowerCase().includes(searchLower) ||
         sub.employeeId?.toLowerCase().includes(searchLower) ||
         sub.incidentDate?.toLowerCase().includes(searchLower) ||
         sub.coordinatorName?.toLowerCase().includes(searchLower)
       );
+      
+      console.log(`🔍 Evaluando registro ${sub.id}:`, {
+        workerName: sub.workerName,
+        employeeId: sub.employeeId,
+        incidentDate: sub.incidentDate,
+        coordinatorName: sub.coordinatorName,
+        matches,
+        searchLower
+      });
+      
+      return matches;
     });
+
+    console.log('📋 Datos filtrados:', filtered);
 
     filtered.sort((a: any, b: any) => {
       let aVal = a[sortField];
@@ -247,6 +264,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
       return 0;
     });
 
+    console.log('📊 Datos finales para mostrar:', filtered);
     setFilteredSubmissions(filtered);
   }, [submissions, searchTerm, sortField, sortDirection]);
 
@@ -598,6 +616,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack, onLogout }) => {
                   />
                 </div>
                 <div className="flex gap-3">
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    🗑️ Limpiar
+                  </button>
                   <button
                     onClick={() => window.location.reload()}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
