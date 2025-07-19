@@ -50,7 +50,7 @@ function toSnakeCaseAndFlatten(obj: any): any {
 // Lista de campos válidos en la tabla submissions
 const VALID_DB_FIELDS = [
   'id','submissiontimestamp','workername','employeeid','incidentdate','shiftstarttime','shiftendtime','locationonreceipt',
-  'servicetypehospitaldischarge','servicetypenonurgenttransfer','servicetypeother','servicetypeothertext','assignmenttime','remainingshifttime',
+  'servicetype_hospitaldischarge','servicetype_nonurgenttransfer','servicetype_other','servicetype_othertext','assignmenttime','remainingshifttime',
   'pickupaddress','destinationaddress','traveltimetoorigin','traveltimeorigintodestination','traveltimedestinationtobase','estimatedworktimeorigin',
   'estimatedworktimedestination','totalestimatedservicetime','complications','exceedsremainingtime','unforeseencomplications','affectedpersonallife',
   'exceededoveronehour','excessminutes','impactexplanation','generatedroadrisk','additionalhoursworked','riskdetails','coordinatorname','timeslast30days',

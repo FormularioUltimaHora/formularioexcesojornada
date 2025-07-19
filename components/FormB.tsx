@@ -44,13 +44,14 @@ function toSnakeCaseAndFlatten(obj: any): any {
     for (const key in obj) {
       if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
       if (key === 'serviceType' && typeof obj[key] === 'object') {
-        // Aplanar serviceType
+        // Aplanar serviceType correctamente
         for (const subKey in obj[key]) {
           if (!Object.prototype.hasOwnProperty.call(obj[key], subKey)) continue;
           const flatKey = `servicetype_${subKey.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)}`;
           newObj[flatKey] = obj[key][subKey];
         }
       } else {
+        // Convertir camelCase a snake_case correctamente
         const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
         newObj[snakeKey] = toSnakeCaseAndFlatten(obj[key]);
       }
@@ -124,7 +125,7 @@ export const FormB: React.FC = () => {
   // Lista de campos válidos en la tabla submissions
   const VALID_DB_FIELDS = [
     'id','submissiontimestamp','workername','employeeid','incidentdate','shiftstarttime','shiftendtime','locationonreceipt',
-    'servicetypehospitaldischarge','servicetypenonurgenttransfer','servicetypeother','servicetypeothertext','assignmenttime','remainingshifttime',
+    'servicetype_hospitaldischarge','servicetype_nonurgenttransfer','servicetype_other','servicetype_othertext','assignmenttime','remainingshifttime',
     'pickupaddress','destinationaddress','traveltimetoorigin','traveltimeorigintodestination','traveltimedestinationtobase','estimatedworktimeorigin',
     'estimatedworktimedestination','totalestimatedservicetime','complications','exceedsremainingtime','unforeseencomplications','affectedpersonallife',
     'exceededoveronehour','excessminutes','impactexplanation','generatedroadrisk','additionalhoursworked','riskdetails','coordinatorname','timeslast30days',
@@ -191,6 +192,7 @@ export const FormB: React.FC = () => {
       // Mapeo a snake_case y aplanado antes de guardar
       let dbSubmission = toSnakeCaseAndFlatten(newSubmission);
       dbSubmission = cleanDbSubmission(dbSubmission);
+      console.log('Payload enviado a Supabase:', dbSubmission);
       const { error: supabaseError } = await supabase.from('submissions').insert([dbSubmission]);
       if (supabaseError) throw supabaseError;
       setSubmitted(true);
