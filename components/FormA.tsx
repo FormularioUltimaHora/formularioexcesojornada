@@ -159,7 +159,7 @@ export const FormA: React.FC = () => {
       setIsLoading(false);
       return;
     }
-
+    
     const safeWorkerName = formData.workerName.replace(/\s/g, '_') || 'sin_nombre';
     const safeEmployeeId = formData.employeeId || 'sin_id';
     const submissionId = `${safeEmployeeId}-${safeWorkerName}-${Date.now()}`;
@@ -189,7 +189,7 @@ export const FormA: React.FC = () => {
       // Llamada a la función Edge de email
       try {
         await fetch('https://eugowbqnmztgtacoxdcg.functions.supabase.co/send-email-brevo', {
-          method: 'POST',
+            method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${supabaseAnonKey}`
@@ -202,7 +202,7 @@ export const FormA: React.FC = () => {
       } catch (e) {
         console.error('Error enviando email:', e);
       }
-      setSubmitted(true);
+        setSubmitted(true);
       setError(null);
     } catch (err: any) {
       setError('No se pudo conectar a la base de datos o algún campo es incorrecto. Revisa los datos e inténtalo de nuevo.');
@@ -212,8 +212,8 @@ export const FormA: React.FC = () => {
         console.error('Error desconocido:', err);
       }
     } finally {
-      setIsLoading(false);
-      window.scrollTo(0, 0);
+        setIsLoading(false);
+        window.scrollTo(0, 0);
     }
   };
 

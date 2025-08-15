@@ -223,7 +223,7 @@ export const FormB: React.FC = () => {
       // Llamada a la función Edge de email
       try {
         await fetch('https://eugowbqnmztgtacoxdcg.functions.supabase.co/send-email-brevo', {
-          method: 'POST',
+            method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${supabaseAnonKey}`
@@ -236,12 +236,12 @@ export const FormB: React.FC = () => {
       } catch (e) {
         console.error('Error enviando email:', e);
       }
-      setSubmitted(true);
+        setSubmitted(true);
       setError(null);
     } catch (err: any) {
       setError('No se pudo conectar a la base de datos o algún campo es incorrecto. Revisa los datos e inténtalo de nuevo.');
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
   

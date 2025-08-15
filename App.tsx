@@ -7,6 +7,7 @@ import { LoginPage } from './components/LoginPage';
 import { Instructions } from './components/common/Instructions';
 import { GeminiIcon } from './components/icons/GeminiIcon';
 import { ArchiveBoxIcon } from './components/icons/ArchiveBoxIcon';
+import { startKeepAliveService } from './utils/keepAlive';
 
 type FormVersion = 'A' | 'B';
 type View = 'forms' | 'login' | 'admin';
@@ -21,6 +22,9 @@ const App: React.FC = () => {
     if (loggedIn === 'true') {
       setIsAuthenticated(true);
     }
+    
+    // Iniciar servicio de mantenimiento de base de datos
+    startKeepAliveService();
   }, []);
 
   const handleLoginSuccess = () => {

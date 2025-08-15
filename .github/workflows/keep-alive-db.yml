@@ -1,0 +1,37 @@
+name: Keep Database Alive
+
+on:
+  schedule:
+    # Ejecutar diariamente a las 9:00 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Permite ejecución manual
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Keep Database Alive
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      run: node scripts/keep-alive.js
+        
+    - name: Success notification
+      if: success()
+      run: echo "✅ Base de datos mantenida activa exitosamente"
+      
+    - name: Failure notification
+      if: failure()
+      run: echo "❌ Error al mantener base de datos activa"
