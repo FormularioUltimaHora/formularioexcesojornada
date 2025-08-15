@@ -1,4 +1,4 @@
-import { supabase } from '../constants';
+import { supabase } from '../../constants';
 
 /**
  * Función para mantener la base de datos activa
