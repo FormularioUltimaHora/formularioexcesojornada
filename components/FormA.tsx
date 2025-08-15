@@ -188,8 +188,9 @@ export const FormA: React.FC = () => {
       }
       // Llamada a la función Edge de email
       try {
-        await fetch('https://eugowbqnmztgtacoxdcg.functions.supabase.co/send-email-brevo', {
-            method: 'POST',
+        console.log('Enviando email...');
+        const emailResponse = await fetch('https://eugowbqnmztgtacoxdcg.functions.supabase.co/send-email-brevo', {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${supabaseAnonKey}`
@@ -199,6 +200,13 @@ export const FormA: React.FC = () => {
             userEmail: formData.email
           })
         });
+        
+        if (!emailResponse.ok) {
+          const errorText = await emailResponse.text();
+          console.error('Error en respuesta del email:', emailResponse.status, errorText);
+        } else {
+          console.log('Email enviado exitosamente');
+        }
       } catch (e) {
         console.error('Error enviando email:', e);
       }
